@@ -18,7 +18,7 @@ class InstallWindow(QWidget):
 
         self.stack = QStackedWidget(self)
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContestMargins(0, 0, 0, 0)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addWidget(self.stack)
 
         self.page1 = page1.Page1(self)
@@ -34,17 +34,22 @@ class InstallWindow(QWidget):
         self.stack.setCurrentWidget(self.page2)
 
     def install(self):
+        if not (self.page2.cb1.isChecked() and self.page2.cb2.isChecked()):
+            QMessageBox.information(self, "Warning", "Пожалуйста, примите пользовательское соглашение и\
+ подтведтите, что вы отдаёте отчет своим действиям.")
+            return
         print("Installing FishOS")
 
         # Some code
 
         self.installed = True
+        QMessageBox.information(self, "Информация", "FishOS успешно утсановлена на ваш ПК.\nСпасибо, что выбираете нас!")
 
-    def closeEvent(self, a0: QtGui.QCloseEvent | None, /) -> None:
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if not self.installed:
-            a0.ignore()
+            event.ignore()
         else:
-            a0.accept()
+            event.accept()
 
 
 if __name__ == "__main__":

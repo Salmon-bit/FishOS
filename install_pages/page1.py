@@ -49,9 +49,3 @@ class Page1(QWidget):
         self.ps.setWordWrap(True)
         self.ps.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.verticalLayout.addWidget(self.ps)
-
-        self.next_btn.clicked.connect(self.next_click)
-
-    def next_click(self):
-        self.destroy(False, True)
-        self.update()
