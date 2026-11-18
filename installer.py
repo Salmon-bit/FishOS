@@ -1,9 +1,11 @@
 import sys
+import os
 from PyQt6 import QtGui
 from PyQt6.QtWidgets import *
 from install_pages import page1, page2
 
 SIZE = (640, 480)
+
 
 class InstallWindow(QWidget):
     def __init__(self):
@@ -35,15 +37,47 @@ class InstallWindow(QWidget):
 
     def install(self):
         if not (self.page2.cb1.isChecked() and self.page2.cb2.isChecked()):
-            QMessageBox.information(self, "Warning", "Пожалуйста, примите пользовательское соглашение и\
- подтведтите, что вы отдаёте отчет своим действиям.")
+            QMessageBox.information(
+                self,
+                "Warning",
+                "Пожалуйста, примите пользовательское соглашение и подтведтите, что вы отдаёте отчет своим действиям."
+            )
             return
         print("Installing FishOS")
 
-        # Some code
+        print(sys.platform)
+        if "win" in sys.platform:
+            # Adding Windows Desktop Link
+            pass
+        else:
+            home_path = os.getenv("HOME")
+            home_dirs = os.listdir(home_path)
+
+            if 'Desktop' in home_dirs:
+                link_path = os.path.join(os.path.join(home_path, "Desktop"), 'FishOS.desktop')
+            elif 'Рабочий стол' in home_dirs:
+                link_path = os.path.join(os.path.join(home_path, "Desktop"), 'FishOS.desktop')
+            else:
+                os.mkdir(os.path.join(home_path, "Desktop"))
+                link_path = os.path.join(os.path.join(home_path, "Desktop"))
+
+            executable_path = sys.executable
+            with open(link_path, "w") as f:
+                DATA = f"""[Desktop Entry]
+Version=1.0
+Name=FishOS
+Comment=Fun Operating System
+Type=Application
+Terminal=false
+Exec={executable_path}"""
+                f.write(DATA)
 
         self.installed = True
-        QMessageBox.information(self, "Информация", "FishOS успешно утсановлена на ваш ПК.\nСпасибо, что выбираете нас!")
+        QMessageBox.information(
+            self,
+            "Информация",
+            "FishOS успешно утсановлена на ваш ПК.\nСпасибо, что выбираете нас!"
+        )
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if not self.installed:
