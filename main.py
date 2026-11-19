@@ -6,5 +6,11 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.showFullScreen()
-        self.size = self.geometry().getRect()
+        QMessageBox.information(self, "Message", "Hello World")
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    w = App()
+    w.show()
+    sys.exit(app.exec())

