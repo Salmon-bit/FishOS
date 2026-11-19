@@ -1,5 +1,7 @@
 import sys
 import os
+
+import requests
 from PyQt6 import QtGui
 from PyQt6.QtWidgets import *
 from install_pages import page1, page2
@@ -60,6 +62,12 @@ class InstallWindow(QWidget):
             else:
                 os.mkdir(os.path.join(home_path, "Desktop"))
                 link_path = os.path.join(os.path.join(home_path, "Desktop"))
+
+            local_data = os.path.join(home_path, ".local/FishOS")
+            os.makedirs(local_data, exist_ok=True)
+
+            with open(os.path.join(local_data, 'fos_ICON.png'), 'wb') as f:
+                data = requests.get('')
 
             executable_path = sys.executable
             with open(link_path, "w") as f:
