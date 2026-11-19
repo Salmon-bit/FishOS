@@ -71,7 +71,8 @@ class InstallWindow(QWidget):
 
             executable_path = sys.executable
             with open(link_path, "w") as f:
-                DATA = f"""[Desktop Entry]
+                DATA = f"""\
+[Desktop Entry]
 Version=1.0
 Name=FishOS
 Comment=Fun Operating System
