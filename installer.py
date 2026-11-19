@@ -54,6 +54,10 @@ class InstallWindow(QWidget):
 
         print(sys.platform)
 
+        self.page2.cb1.setDisabled(True)
+        self.page2.cb2.setDisabled(True)
+        self.page2.cb3.setDisabled(True)
+
         self.run_install(sys.platform)
 
     def download_binary(self, system: str, local_data, startup_folder, link_path):
