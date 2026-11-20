@@ -5,8 +5,11 @@ from PyQt6.QtWidgets import *
 
 
 class ProgressWindow(QWidget):
-    def __init__(self, icon: QIcon):
+    def __init__(self, icon: QIcon, steps: int):
         super().__init__()
+
+        self.steps = steps
+        self.done_steps = 0
 
         self.setWindowTitle("Статус установки")
         self.setGeometry(300, 300, 500, 200)
@@ -34,6 +37,12 @@ class ProgressWindow(QWidget):
 
     def addValue(self, value: int):
         self.progressBar.setValue(self.progressBar.value() + value)
+
+    def next(self):
+        if self.done_steps + 1 == self.steps:
+            self.addValue(100 - self.progressBar.value())
+        else:
+            self.addValue(round(100 / self.steps))
 
     def closeEvent(self, event: QCloseEvent):
         if self.progressBar.value() == 100:

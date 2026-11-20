@@ -1,0 +1,3 @@
+fos_ICON.ico
+foc_ICON.png
+wallpaper.jpg

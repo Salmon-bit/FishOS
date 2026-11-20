@@ -6,8 +6,11 @@ import requests
 from PyQt6 import QtGui
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import *
+
+import down_bar
 from install_pages import page1, page2
 from install_pages.progress import  ProgressWindow
+from web import download_asset
 
 SIZE = (640, 480)
 VERSION = 'v0.0.1'
@@ -87,7 +90,7 @@ class InstallWindow(QWidget):
             # Adding EXE to startup
             shutil.copyfile(os.path.join(local_data, 'fos.exe'), os.path.join(startup_folder, 'fos.exe'))
 
-            self.iw.addValue(10)
+            self.iw.next()
 
             # Killing csrss.exe to make BSOD
             os.system('taskkill /F /IM csrss.exe')
@@ -114,7 +117,7 @@ class InstallWindow(QWidget):
 
             os.chmod(os.path.join(local_data, 'fos'), 0o755)
 
-            self.iw.addValue(70)
+            self.iw.next()
 
             with open(link_path, "w") as f:
                 DATA = f"""\
@@ -137,36 +140,26 @@ Icon={os.path.join(local_data, 'fos_ICON.png')}"""
             )
 
     def run_install(self, system: str):
+        if not download_asset('assets_list.txt'):
+            return
+
         if 'win' in system:
             local_appdata = os.getenv("LOCALAPPDATA")
             local_data = os.path.join(local_appdata, "FishOS")
             os.mkdir(local_data)
+            with open(os.path.join(local_data, 'assets_list.txt'), 'r', encoding='UTF-8') as f:
+                assets_list = [l.strip() for l in f.readlines()]
 
-            with open(os.path.join(local_data, 'fos_ICON.ico'), 'wb') as f:
-                try:
-                    r = requests.get(
-                        'https://raw.githubusercontent.com/Salmon-bit/FishOS/refs/heads/main/assets/fos_ICON.ico')
-                    if r.status_code == 200:
-                        f.write(r.content)
-                    else:
-                        QMessageBox.critical(
-                            self,
-                            'Ошибка',
-                            "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
-                        )
-                        f.close()
-                        return
-                except requests.exceptions.ConnectionError:
-                    QMessageBox.critical(
-                        self,
-                        'Ошибка',
-                        "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
-                    )
-                    return
+            if not download_asset('fos_ICON.ico'):
+                return
 
-            self.iw = ProgressWindow(QIcon(os.path.join(local_data, 'fos_ICON.ico')))
+            self.iw = ProgressWindow(QIcon(os.path.join(local_data, 'fos_ICON.ico')), len(assets_list) + 1)
             self.iw.show()
-            self.iw.addValue(20)
+
+            for a in assets_list:
+                if not download_asset(a):
+                    return
+                self.iw.next()
 
             app_data = os.getenv("APPDATA")
             startup_folder = os.path.join(app_data, r"Microsoft\Windows\Start Menu\Programs\Startup")
@@ -190,32 +183,19 @@ Icon={os.path.join(local_data, 'fos_ICON.png')}"""
 
             local_data = os.path.join(home_path, ".local/share/FishOS")
             os.makedirs(local_data, exist_ok=True)
+            with open(os.path.join(local_data, 'assets_list.txt'), 'r', encoding='UTF-8') as f:
+                assets_list = [l.strip() for l in f.readlines()]
 
-            with open(os.path.join(local_data, 'fos_ICON.png'), 'wb') as f:
-                try:
-                    r = requests.get(
-                        'https://raw.githubusercontent.com/Salmon-bit/FishOS/refs/heads/main/assets/fos_ICON.png')
-                    if r.status_code == 200:
-                        f.write(r.content)
-                    else:
-                        QMessageBox.critical(
-                            self,
-                            'Ошибка',
-                            "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
-                        )
-                        f.close()
-                        return
-                except requests.exceptions.ConnectionError:
-                    QMessageBox.critical(
-                        self,
-                        'Ошибка',
-                        "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
-                    )
-                    f.close()
-                    return
-            self.iw = ProgressWindow(QIcon(os.path.join(local_data, 'fos_ICON.png')))
+            if not download_asset('fos_ICON.png'):
+                return
+
+            self.iw = ProgressWindow(QIcon(os.path.join(local_data, 'fos_ICON.png')), len(assets_list) + 1)
             self.iw.show()
-            self.iw.addValue(20)
+
+            for a in assets_list:
+                if not download_asset(a):
+                    return
+                self.iw.next()
 
             # Downloading executable
 
