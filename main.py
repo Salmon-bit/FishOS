@@ -1,6 +1,7 @@
 import sys
 from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import *
+from desktop import Desktop
 from down_bar import Bar
 from widgets.time import TimeWidget
 
@@ -13,6 +14,8 @@ class App(QWidget):
 
         self.width = 0
         self.height = 0
+
+        self.desktop = Desktop(self, self.width, self.height)
 
         self.bar = Bar(self, self.width, self.height)
         self.time_widget = TimeWidget(self.bar)

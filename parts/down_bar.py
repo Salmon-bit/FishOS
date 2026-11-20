@@ -5,7 +5,7 @@ from widgets.time import TimeWidget
 
 
 class Bar(QWidget):
-    def __init__(self, parent, width, height, bar_height=50):
+    def __init__(self, parent: QWidget, width, height, bar_height=50):
         super().__init__(parent)
 
         self.bar_height = bar_height

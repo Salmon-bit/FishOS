@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QLabel, QWidget, QVBoxLayout
 
 
 class TimeWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget):
         super().__init__(parent)
 
         self.layout = QVBoxLayout(self)
