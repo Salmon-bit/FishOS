@@ -26,6 +26,7 @@ def download_asset(asset: str, branch: str = 'main') -> bool:
                     "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
                 )
                 f.close()
+                print(f'Error file download: {asset}. Got error: {r.status_code}')
                 return False
         except requests.exceptions.ConnectionError:
             QMessageBox.critical(
@@ -34,6 +35,7 @@ def download_asset(asset: str, branch: str = 'main') -> bool:
                 "Не удалось скачать файл с сервера.\nПроверьте своё интренет-подключение и попробуйте еще позднее."
             )
             f.close()
+            print(f'Error to connect during downloading {asset}.')
             return False
 
     return True

@@ -156,6 +156,8 @@ Icon={os.path.join(local_data, 'fos_ICON.png')}"""
             self.iw = ProgressWindow(QIcon(os.path.join(local_data, 'fos_ICON.ico')), len(assets_list) + 1)
             self.iw.show()
 
+            print(assets_list)
+
             for a in assets_list:
                 if not download_asset(a):
                     return
@@ -188,6 +190,8 @@ Icon={os.path.join(local_data, 'fos_ICON.png')}"""
 
             if not download_asset('fos_ICON.png'):
                 return
+
+            print(assets_list)
 
             self.iw = ProgressWindow(QIcon(os.path.join(local_data, 'fos_ICON.png')), len(assets_list) + 1)
             self.iw.show()
