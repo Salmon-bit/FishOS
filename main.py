@@ -16,6 +16,8 @@ class App(QWidget):
         self.height = 0
 
         self.desktop = Desktop(self, self.width, self.height)
+        self.desktop.setGeometry(0, 0, self.width, self.height - 50)
+        self.desktop.show()
 
         self.bar = Bar(self, self.width, self.height)
         self.time_widget = TimeWidget(self.bar)
