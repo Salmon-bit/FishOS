@@ -1,3 +1,4 @@
 fos_ICON.ico
 fos_ICON.png
 wallpaper.jpg
+calc.png

@@ -1,7 +1,7 @@
 import sys
-from PyQt6.QtCore import Qt, QRect, QSize
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import *
-from widgets.time import TimeWidget
+from parts.widgets.time import TimeWidget
 
 
 class Bar(QWidget):
@@ -12,19 +12,19 @@ class Bar(QWidget):
         self.win_width = width
         self.win_height = height
 
-        # Разрешаем QWidget отрисовывать фон из StyleSheet
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setStyleSheet("Bar { background-color: rgb(0, 50, 255); color: white; }")
+        self.setStyleSheet("Bar { background-color: rgb(0, 50, 255); } QLabel { color: white; }")
 
         self.layout = QHBoxLayout(self)
         self.tray = QHBoxLayout()
+        self.tray.setContentsMargins(0, 0, 0, 0)
         self.apps = QHBoxLayout()
 
         self.layout.addLayout(self.apps)
         self.layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
         self.layout.addLayout(self.tray)
 
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(10, 0, 10, 0)
         self.update_size(QSize(width, height))
 
     def add_tray_widget(self, widget: QWidget):

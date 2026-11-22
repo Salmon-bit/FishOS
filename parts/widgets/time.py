@@ -15,10 +15,12 @@ class TimeWidget(QWidget):
         self.time = QLabel(self)
         self.time.setFont(QFont("Arial", 14))
         self.time.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.time.setStyleSheet("color: white;")
 
         self.date = QLabel(self)
         self.date.setFont(QFont("Arial", 9))
         self.date.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.date.setStyleSheet("color: white;")
 
         self.layout.addWidget(self.time)
         self.layout.addWidget(self.date)
@@ -27,9 +29,8 @@ class TimeWidget(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_time)
-        self.timer.start(10)
+        self.timer.start(500)
 
-        # Вызываем сразу при создании, чтобы не ждать первую секунду
         self.update_time()
 
     def update_time(self):

